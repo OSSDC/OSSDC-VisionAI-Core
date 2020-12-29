@@ -8,6 +8,12 @@ import os
 # Mono depth using MiDaS project - old model
 # https://github.com/intel-isl/MiDaS
 
+# Install steps:
+# pip install pytorch torchvision
+# cd ..
+# git clone https://github.com/intel-isl/MiDaS
+# wget https://github.com/intel-isl/MiDaS/releases/download/v2/model-f46da743.pt MiDaS/model-f46da743.pt
+
 # Status: working
 
 sys.path.insert(0, '../MiDaS/')

@@ -30,13 +30,14 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 
 - MiDaS mono depth
     - Run VisionAI Android app and setup the room and start the WebRTC conference
-    - Update room info in signaling_race.py
+    - Install MiDaS - see install steps in video_processing_midas.py
     - run the MiDaS video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t midas
     - Demo Video
         https://www.youtube.com/watch?v=6a6bqJiZuaM
 
 - DLIB face landmarks
+    - Install DLIB and face landmarks pretrained model - see instructions steps in video_processing_face_landmarks.py
     - run the DLIB face landmarks video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t face_landmarks
 
