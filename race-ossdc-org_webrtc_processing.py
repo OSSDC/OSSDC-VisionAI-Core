@@ -23,7 +23,6 @@ from signaling_race import BYE, RaceOssdcSignaling, object_from_string, object_t
 
 import sys
 import argparse
-import pafy
 
 import time
 import json
