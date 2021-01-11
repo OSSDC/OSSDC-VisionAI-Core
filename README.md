@@ -1,6 +1,6 @@
 # OSSDC VisionAI
 
-**A set of computer vision and artificial intelligence algorithms for robotics and self driving cars*
+**A set of computer vision and artificial intelligence algorithms for robotics and self driving cars**
 
 This project has support for Race.OSSDC.org WebRTC based platform, to allow for extensive and quick testing, of computer vision and neural nets algorithms, against live (real life or simulated) or streamed (not live) videos (from Youtube or other datasets).
 
