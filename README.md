@@ -8,7 +8,7 @@ To contribute follow the approach in video_processing files to add your own algo
 
 Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-VisionAI-Datasets project.
 
-# Install prerequisites
+## Install prerequisites
 
 - pip install opencv-python # required for all video processors
 - pip install opencv-contrib-python # required for video_processing_opencv
@@ -18,12 +18,12 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 - pip install tensorflow-gpu
 - pip install youtube-dl # required for YouTube streaming sources
 
-# Install VisionAI Android client app
+## Install VisionAI Android client app
 
 - Download and install the alpha version of the Android APK from here:
     - https://github.com/OSSDC/OSSDC-VisionAI-Mobile/releases/
 
-# Demos
+## Demos
 
 - Prerequisite steps before running the python processing scripts
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
