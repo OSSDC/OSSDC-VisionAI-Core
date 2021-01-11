@@ -18,9 +18,9 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 - pip install tensorflow-gpu
 - pip install youtube-dl # required for YouTube streaming sources
 
-## Install VisionAI Android client app
+## Install OSSDC VisionAI Android client app
 
-- Download and install the alpha version of the Android APK from here:
+- Download and install the alpha version from here:
     - https://github.com/OSSDC/OSSDC-VisionAI-Mobile/releases/
 
 ## Demos
