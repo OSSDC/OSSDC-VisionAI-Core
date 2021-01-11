@@ -1,5 +1,4 @@
-# OSSDC-VisionAI-Core
-OSSDC Vision AI core functionality
+# OSSDC VisionAI
 
 A set of computer vision and artificial intelligence algorithms for robotics and self driving cars
 
