@@ -1,6 +1,8 @@
 # OSSDC-VisionAI-Core
 OSSDC Vision AI core functionality
 
+A set of computer vision and artificial intelligence algorithms for robotics and self driving cars
+
 This project has support for Race.OSSDC.org WebRTC based platform, to allow for extensive and quick testing, of computer vision and neural nets algorithms, against live (real life or simulated) or streamed (not live) videos (from Youtube or other datasets).
 
 To contribute follow the approach in video_processing files to add your own algorithm and create a PR to integrate it in this project.
@@ -19,8 +21,8 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 
 # Install VisionAI Android client app
 
-- Download and install the alpha version of the app from here (Soon I'll provide a new link with the VisionAI app):
-    - https://race.ossdc.org/apks/race-ossdc-org-remote.apk
+- Download and install the alpha version of the Android APK from here:
+    - https://github.com/OSSDC/OSSDC-VisionAI-Mobile/releases/
 
 # Demos
 
@@ -33,9 +35,16 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Install MiDaS - see install steps in video_processing_midas.py
     - run the MiDaS video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t midas
-    - Demo Video
+    - Demo Videos
+
+        Mono depth over WebRTC using Race.OSSDC.org platform
+        
         https://www.youtube.com/watch?v=6a6bqJiZuaM
 
+        OSSDC VisionAI MiDaS Mono Depth - night demo
+        
+        https://www.youtube.com/watch?v=T0ZnW1crm7M
+        
 - DLIB face landmarks
     - Install DLIB and face landmarks pretrained model - see instructions steps in video_processing_face_landmarks.py
     - run the DLIB face landmarks video processor on the video stream from VisionAI Android app
