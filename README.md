@@ -31,7 +31,7 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 
 - OAK-D people reidentification demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
     - Run VisionAI Android app and setup the room and start the WebRTC conference
-    - Install MiDaS - see install steps in video_processing_oakd.py
+    - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
     - run the OAK-D video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t oakd
     - Demo video
