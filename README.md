@@ -29,6 +29,17 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
+- OAK-D people reidentification demo, the proceessing is done on Luxonix OAK-D camera vision processing unit
+    - Run VisionAI Android app and setup the room and start the WebRTC conference
+    - Install MiDaS - see install steps in video_processing_oakd.py
+    - run the OAK-D video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t oakd
+    - Demo video
+    
+        People reidentification demo with processing done on Luxonis OAK-D camera processor
+        
+        https://www.youtube.com/watch?v=pB0BpHieu3Y
+
 - MiDaS mono depth
     - Run VisionAI Android app and setup the room and start the WebRTC conference
     - Install MiDaS - see install steps in video_processing_midas.py
