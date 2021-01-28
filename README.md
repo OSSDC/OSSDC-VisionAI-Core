@@ -25,18 +25,28 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 
 ## Demos
 
-- Prerequisite steps before running the python processing scripts
+- Prerequisite steps every time before running the python video processing scripts
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
+
+- OAK-D people reidentification demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
+    - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
+    - run the OAK-D video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t oakd.gaze
+    - Demo video
+    
+        Gaze estimation demo with processing done on Luxonis OAK-D camera processor (processing at 10 FPS on 486 x 1062 video, streamed at 30 FPS) 
+        
+        https://www.youtube.com/watch?v=xMgNWRWytOk
 
 - OAK-D people reidentification demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
     - Run VisionAI Android app and setup the room and start the WebRTC conference
     - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
     - run the OAK-D video processor on the video stream from VisionAI Android app
-        - python race-ossdc-org_webrtc_processing.py -t oakd
+        - python race-ossdc-org_webrtc_processing.py -t oakd.pre
     - Demo video
     
-        People reidentification demo with processing done on Luxonis OAK-D camera processor
+        People reidentification demo with processing done on Luxonis OAK-D camera processor (processing at 9 FPS on 486 x 1062 video, streamed at 30 FPS) 
         
         https://www.youtube.com/watch?v=pB0BpHieu3Y
 
