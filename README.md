@@ -50,7 +50,7 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
         
         https://www.youtube.com/watch?v=pB0BpHieu3Y
 
-- MiDaS mono depth
+- MiDaS mono depth, processing is done on Nvidia GPU
     - Run VisionAI Android app and setup the room and start the WebRTC conference
     - Install MiDaS - see install steps in video_processing_midas.py
     - run the MiDaS video processor on the video stream from VisionAI Android app
@@ -65,11 +65,11 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
         
         https://www.youtube.com/watch?v=T0ZnW1crm7M
         
-- DLIB face landmarks
+- DLIB face landmarks, processing is done on CPU
     - Install DLIB and face landmarks pretrained model - see instructions steps in video_processing_face_landmarks.py
     - run the DLIB face landmarks video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t face_landmarks
 
-- OpenCV edges detection
+- OpenCV edges detection, processing is done on CPU
     - run the OpenCV edges video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t opencv.edges
