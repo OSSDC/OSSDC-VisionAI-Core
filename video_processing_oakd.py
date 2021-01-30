@@ -1,3 +1,4 @@
+import traceback
 import queue
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import os
 from datetime import datetime, timedelta
 from math import cos, sin
 
+import time
 
 # OAK-D camera accelerated processing examples
 # https://github.com/luxonis/depthai-experiments
@@ -19,6 +21,11 @@ from math import cos, sin
 # pip install --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/ depthai==0.0.2.1+6ec3f3181b4e46fa6a9f9b20a5b4a3dac5e876b4
 # cd ..
 # git clone https://github.com/luxonis/depthai-experiments
+
+# implemented these algorithms:
+# pre - pedestrian reidentification https://github.com/luxonis/depthai-experiments/tree/master/pedestrian-reidentification
+# gaze - gaze estimation https://github.com/luxonis/depthai-experiments/tree/master/gaze-estimation
+# age-gen - age gender recognition https://github.com/luxonis/depthai-experiments/tree/master/gen2-age-gender 
 
 # Status: working
 
@@ -37,13 +44,17 @@ results_path = {}
 reid_bbox_q = queue.Queue()
 next_id = 0
 
+face_bbox_q = queue.Queue()
+age_gender_in = None
+age_gender_nn = None
+
 #this is needed for gaze estimation visualization
 debug=True
 
 useOAKDCam=False
 
 def init_model(transform):
-    global device, cap, cam_out, detection_in, detection_nn, reid_in,reid_nn
+    global device, cap, cam_out, detection_in, detection_nn, reid_in,reid_nn, age_gender_in, age_gender_nn
 
     if transform == 'pre':
         # sys.path.insert(0, '../depthai-experiments/pedestrian-reidentification')
@@ -61,15 +72,29 @@ def init_model(transform):
     elif transform == 'gaze':
         # sys.path.insert(0, '../depthai-experiments/gaze-estimation')
         # import main.Main;
-        # cap = cv2.VideoCapture(str(Path("../depthai-experiments/demo.mp4").resolve().absolute()))
+        # cap = cv2.VideoCapture(str(Path("../depthai-experiments/gaze-estimation/demo.mp4").resolve().absolute()))
 
         model = Main()
         return model, None
 
+    elif transform == 'age-gen':
+        device = depthai.Device(create_pipeline_age_gen())
+        print("Starting pipeline...")
+        device.startPipeline()
+        if useOAKDCam:
+            cam_out = device.getOutputQueue("cam_out", 1, True)
+        else:
+            detection_in = device.getInputQueue("detection_in")
+        detection_nn = device.getOutputQueue("detection_nn")
+        age_gender_in = device.getInputQueue("age_gender_in")
+        age_gender_nn = device.getOutputQueue("age_gender_nn")
+
+        # cap = cv2.VideoCapture(str(Path("../depthai-experiments/gen2-age-gender/input.mp4").resolve().absolute()))
+
     return None, None
 
 def process_image(transform,processing_model,img):
-    global useOAKDCam, bboxes,results,results_path,reid_bbox_q,next_id, device, cap, cam_out, detection_in, detection_nn, reid_in,reid_nn 
+    global useOAKDCam, bboxes, results, results_path, reid_bbox_q, next_id, device, face_bbox_q, age_gender_in, age_gender_nn, cap, cam_out, detection_in, detection_nn, reid_in,reid_nn 
     tracks = []
     try:
         if useOAKDCam:
@@ -78,6 +103,7 @@ def process_image(transform,processing_model,img):
         else:
             frame = img
 
+        #pedestrian reidentification https://github.com/luxonis/depthai-experiments/tree/master/pedestrian-reidentification
         if transform == 'pre':
 
             if frame is not None:
@@ -86,6 +112,8 @@ def process_image(transform,processing_model,img):
                 nn_data = depthai.NNData()
                 nn_data.setLayer("input", to_planar(frame, (544, 320)))
                 detection_in.send(nn_data)
+            # else:
+            #     return tracks, img
 
             while detection_nn.has():
                 bboxes = np.array(detection_nn.get().getFirstLayerFp16())
@@ -94,7 +122,7 @@ def process_image(transform,processing_model,img):
                 bboxes = bboxes[bboxes[:, 2] > 0.7][:, 3:7]
 
                 for raw_bbox in bboxes:
-                    bbox = frame_norm(frame, raw_bbox)
+                    bbox = frame_norm_1(frame, raw_bbox)
                     det_frame = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
 
                     nn_data = depthai.NNData()
@@ -131,12 +159,67 @@ def process_image(transform,processing_model,img):
             
             img = debug_frame
 
+        # gaze estimation https://github.com/luxonis/depthai-experiments/tree/master/gaze-estimation
         elif transform == 'gaze':
             model = processing_model            
             model.frame = frame
             tracks, img = model.parse()
 
+        # age gender recognition https://github.com/luxonis/depthai-experiments/tree/master/gen2-age-gender
+        elif transform == 'age-gen':
+            if frame is not None:
+                debug_frame = frame.copy()
+
+                if not useOAKDCam:
+                    nn_data = depthai.NNData()
+                    nn_data.setLayer("input", to_planar(frame, (300, 300)))
+                    detection_in.send(nn_data)
+
+            while detection_nn.has():
+                bboxes = np.array(detection_nn.get().getFirstLayerFp16())
+                bboxes = bboxes.reshape((bboxes.size // 7, 7))
+                bboxes = bboxes[bboxes[:, 2] > 0.7][:, 3:7]
+
+                for raw_bbox in bboxes:
+                    bbox = frame_norm_1(frame, raw_bbox)
+                    det_frame = frame[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+
+                    nn_data = depthai.NNData()
+                    nn_data.setLayer("data", to_planar(det_frame, (48, 96)))
+                    age_gender_in.send(nn_data)
+                    face_bbox_q.put(bbox)
+
+            while age_gender_nn.has():
+                det = age_gender_nn.get()
+                age = int(float(np.squeeze(np.array(det.getLayerFp16('age_conv3')))) * 100)
+                gender = np.squeeze(np.array(det.getLayerFp16('prob')))
+                gender_str = "female" if gender[0] > gender[1] else "male"
+                bbox = face_bbox_q.get()
+
+                while not len(results) < len(bboxes) and len(results) > 0:
+                    results.pop(0)
+                results.append({
+                    "bbox": bbox,
+                    "gender": gender_str,
+                    "age": age,
+                    "ts": time.time()
+                })
+
+            results = list(filter(lambda result: time.time() - result["ts"] < 0.2, results))
+
+            if frame is not None:
+                for result in results:
+                    bbox = result["bbox"]
+                    cv2.rectangle(debug_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (10, 245, 10), 2)
+                    y = (bbox[1] + bbox[3]) // 2
+                    cv2.putText(debug_frame, str(result["age"]), (bbox[0], y), cv2.FONT_HERSHEY_TRIPLEX, 1.0, (255, 255, 255))
+                    cv2.putText(debug_frame, result["gender"], (bbox[0], y + 20), cv2.FONT_HERSHEY_TRIPLEX, 1.0, (255, 255, 255))
+
+            img = debug_frame
+
     except Exception as e:
+        track = traceback.format_exc()
+        print(track)
         print("OAK-D Exception",e)
         pass
                 
@@ -147,7 +230,7 @@ def cos_dist(a, b):
     return np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
 
 
-def frame_norm(frame, bbox):
+def frame_norm_1(frame, bbox):
     return (np.clip(np.array(bbox), 0, 1) * np.array([*frame.shape[:2], *frame.shape[:2]])[::-1]).astype(int)
 
 
@@ -193,6 +276,53 @@ def create_pipeline_people_reidentification():
     reid_nn_xout.setStreamName("reid_nn")
     reid_in.out.link(reid_nn.input)
     reid_nn.out.link(reid_nn_xout.input)
+
+    print("Pipeline created.")
+    return pipeline
+
+
+def create_pipeline_age_gen():
+    global useOAKDCam
+    print("Creating pipeline...")
+    pipeline = depthai.Pipeline()
+
+    if useOAKDCam:
+        # ColorCamera
+        print("Creating Color Camera...")
+        cam = pipeline.createColorCamera()
+        cam.setPreviewSize(300, 300)
+        cam.setResolution(depthai.ColorCameraProperties.SensorResolution.THE_1080_P)
+        cam.setInterleaved(False)
+        cam.setBoardSocket(depthai.CameraBoardSocket.RGB)
+        cam_xout = pipeline.createXLinkOut()
+        cam_xout.setStreamName("cam_out")
+        cam.preview.link(cam_xout.input)
+
+    # NeuralNetwork
+    print("Creating Face Detection Neural Network...")
+    detection_nn = pipeline.createNeuralNetwork()
+    detection_nn.setBlobPath(str(Path("../depthai-experiments/gen2-age-gender/models/face-detection-retail-0004.blob").resolve().absolute()))
+    detection_nn_xout = pipeline.createXLinkOut()
+    detection_nn_xout.setStreamName("detection_nn")
+    detection_nn.out.link(detection_nn_xout.input)
+
+    if useOAKDCam:
+        cam.preview.link(detection_nn.input)
+    else:
+        detection_in = pipeline.createXLinkIn()
+        detection_in.setStreamName("detection_in")
+        detection_in.out.link(detection_nn.input)
+
+    # NeuralNetwork
+    print("Creating Age Gender Neural Network...")
+    age_gender_in = pipeline.createXLinkIn()
+    age_gender_in.setStreamName("age_gender_in")
+    age_gender_nn = pipeline.createNeuralNetwork()
+    age_gender_nn.setBlobPath(str(Path("../depthai-experiments/gen2-age-gender/models/age-gender-recognition-retail-0013.blob").resolve().absolute()))
+    age_gender_nn_xout = pipeline.createXLinkOut()
+    age_gender_nn_xout.setStreamName("age_gender_nn")
+    age_gender_in.out.link(age_gender_nn.input)
+    age_gender_nn.out.link(age_gender_nn_xout.input)
 
     print("Pipeline created.")
     return pipeline
