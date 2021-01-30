@@ -29,7 +29,7 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
-- OAK-D people reidentification demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
+- OAK-D gaze estimation demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
     - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
     - run the OAK-D video processor on the video stream from VisionAI Android app
         - python race-ossdc-org_webrtc_processing.py -t oakd.gaze
@@ -49,6 +49,14 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
         People reidentification demo with processing done on Luxonis OAK-D camera processor (processing at 9 FPS on 486 x 1062 video, streamed at 30 FPS) 
         
         https://www.youtube.com/watch?v=pB0BpHieu3Y
+
+- OAK-D age and genrer recognition demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
+    - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
+    - run the OAK-D video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t oakd.age-gen
+    - Demo video
+    
+        Upcomming    
 
 - MiDaS mono depth, processing is done on Nvidia GPU
     - Run VisionAI Android app and setup the room and start the WebRTC conference
