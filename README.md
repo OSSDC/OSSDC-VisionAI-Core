@@ -8,6 +8,13 @@ To contribute follow the approach in video_processing files to add your own algo
 
 Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-VisionAI-Datasets project.
 
+<p align="center">
+OSSDC VisionAI Demo Reel - run the algoritms in Google Colab
+</p>
+<p align="center">
+<a href="https://colab.research.google.com/github/OSSDC/OSSDC-VisionAI-Core/blob/master/OSSDC_VisionAI_demo_reel.ipynb" target="_parent"><img src="https://camo.githubusercontent.com/52feade06f2fecbf006889a904d221e6a730c194/68747470733a2f2f636f6c61622e72657365617263682e676f6f676c652e636f6d2f6173736574732f636f6c61622d62616467652e737667" alt="Open Demo Reel In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a>
+</p>
+
 ###### OAK-D Spacial AI camera - Demos
 
 <p align="center">
