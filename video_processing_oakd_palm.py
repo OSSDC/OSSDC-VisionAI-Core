@@ -17,18 +17,13 @@ from math import sqrt, ceil
 
 import time
 
-# OAK-D camera accelerated processing examples
-# https://github.com/luxonis/depthai-experiments
+# OAK-D palm detection
+# https://github.com/geaxgx/oakd_palm_detection
 
 # Install steps:
 # pip install --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/ depthai==0.0.2.1+6ec3f3181b4e46fa6a9f9b20a5b4a3dac5e876b4
 # cd ..
-# git clone https://github.com/luxonis/depthai-experiments
-
-# implemented these algorithms:
-# pre - pedestrian reidentification https://github.com/luxonis/depthai-experiments/tree/master/pedestrian-reidentification
-# gaze - gaze estimation https://github.com/luxonis/depthai-experiments/tree/master/gaze-estimation
-# age-gen - age gender recognition https://github.com/luxonis/depthai-experiments/tree/master/gen2-age-gender 
+# git clone https://github.com/geaxgx/oakd_palm_detection
 
 # Status: working
 

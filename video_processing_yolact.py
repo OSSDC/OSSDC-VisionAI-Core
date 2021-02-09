@@ -8,14 +8,9 @@ import os
 
 transform='yolact' #object segmentation
 
-# transform = args.transform
-
 # counter = 0
 skip_frames = 30*4
-# frameCnt = 0
-# prevFrameCnt = 0
-# prevTime = datetime.now()
-# fpsValue = 0
+
 previous_grey = None
 hsv = None
 hsv_roi = None
@@ -55,7 +50,6 @@ from utils.functions import SavePath
 from layers.output_utils import postprocess, undo_image_transformation
 import pycocotools
 from data import cfg, set_cfg, set_dataset
-# from efficientdet_test_videos import *
 
 def init_model(transform):
     args = parse_args()
@@ -97,8 +91,6 @@ def init_model(transform):
         print(' Done.')
         net = net.cuda()
 
-        # net.detect.use_fast_nms = args.fast_nms
-        # net.detect.use_cross_class_nms = args.cross_class_nms
         net = CustomDataParallel(net).cuda()
         transform = torch.nn.DataParallel(FastBaseTransform()).cuda()
 
@@ -109,7 +101,6 @@ def process_image(transform,processing_model,img):
     tracks = []
     try:
         with torch.no_grad():
-            # startTime = time.time()
             net = processing_model
             frame = torch.from_numpy(img).cuda().float()
             batch = FastBaseTransform()(frame.unsqueeze(0))
@@ -117,19 +108,6 @@ def process_image(transform,processing_model,img):
             # print("display predictions",preds)
             img_numpy = prep_display(preds, frame, None, None, undo_transform=False)
 
-            # endTime = time.time()
-            # print('delta time', endTime-startTime)
-
-            # img_numpy = prep_display(preds, img, h, w)
-            # cv2.imwrite('img1.png', img_numpy)
-            # img_numpy = img_numpy[:, :, (2, 1, 0)]
-
-            # plt.imshow(img_numpy)
-            # plt.title("test")
-            # plt.show()
-            # # from google.colab.patches import cv2_imshow
-            # # cv2_imshow(img)
-#             return img_numpy #.detach().numpy()
             img = img_numpy
             tracks = preds
     except:
