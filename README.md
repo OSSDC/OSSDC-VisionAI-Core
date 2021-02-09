@@ -37,7 +37,7 @@ OSSDC VisionAI Demo Reel - run the algoritms in Google Colab
     <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/midas_objects_1.gif?raw=true" width="300px">
 </p>
 
-(**MiDaS mono-depth person demo** video can be found [here](https://www.youtube.com/watch?v=xMgNWRWytOk))
+(**MiDaS mono-depth person demo** video can be found [here](https://www.youtube.com/watch?v=6a6bqJiZuaM))
 
 (**MiDaS mono-depth night walk demo** video can be found [here](https://www.youtube.com/watch?v=T0ZnW1crm7M))
 
