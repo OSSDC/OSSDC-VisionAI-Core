@@ -22,8 +22,8 @@ BYE = object()
 
 start_timer = None
 
-roomName = 'TestRoom12345' #replace this with your room name and password
-passCode = '12345'
+roomName = 'TestRoom123456' #replace this with your room name and password
+passCode = '123456'
 droneRoomName = hashlib.md5((roomName+'-'+passCode).encode("utf-8")).hexdigest()
 
 debug=False
