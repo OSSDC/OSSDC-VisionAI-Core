@@ -29,6 +29,20 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
+###### OAK-D Spacial AI camera 
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_gaze_1.gif" width="300px">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_pedestrian_reidentification_1.gif" width="300px">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_ssd_1.gif" width="300px">
+</p>
+
+(**Gaze estimation** video can be found [here](https://www.youtube.com/watch?v=xMgNWRWytOk))
+
+(**Pedestrian re-identification** video can be found [here](https://www.youtube.com/watch?v=pB0BpHieu3Y))
+
+(**SSD object detection** video can be found [here]())
+
 - OAK-D gaze estimation demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
     - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
     - run the OAK-D video processor on the video stream from VisionAI Android app
@@ -57,6 +71,20 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Demo video
     
         Upcomming    
+
+###### MiDaS mono depth
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/midas_person_1.gif" width="300px">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/midas_night_1.gif" width="300px">
+    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/midas_objects_1.gif" width="300px">
+</p>
+
+(**MiDaS mono-depth person demo** video can be found [here](https://www.youtube.com/watch?v=xMgNWRWytOk))
+
+(**MiDaS mono-depth night walk demo** video can be found [here](https://www.youtube.com/watch?v=T0ZnW1crm7M))
+
+(**MiDaS mono-depth objects demo** video can be found [here]())
 
 - MiDaS mono depth, processing is done on Nvidia GPU
     - Run VisionAI Android app and setup the room and start the WebRTC conference
