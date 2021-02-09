@@ -56,13 +56,28 @@ useOAKDCam=False
 def init_model(transform):
     global device, cap, cam_out, detection_in, detection_nn, reid_in,reid_nn, age_gender_in, age_gender_nn
 
+    if transform == 'ssd':
+        # sys.path.insert(0, '../depthai-experiments/pedestrian-reidentification')
+        device = depthai.Device(create_pipeline_ssd())
+        print("Starting pipeline...")
+        device.startPipeline()
+        if useOAKDCam:
+            cam_out = device.getOutputQueue("cam_out", 1, True)
+        else:
+            detection_in = device.getInputQueue("detection_in")
+        detection_nn = device.getOutputQueue("detection_nn")
+
+        # cap = cv2.VideoCapture(str(Path("../depthai-experiments/pedestrian-reidentification/input.mp4").resolve().absolute()))
+
     if transform == 'pre':
         # sys.path.insert(0, '../depthai-experiments/pedestrian-reidentification')
         device = depthai.Device(create_pipeline_people_reidentification())
         print("Starting pipeline...")
         device.startPipeline()
-        cam_out = device.getOutputQueue("cam_out", 1, True)
-        detection_in = device.getInputQueue("detection_in")
+        if useOAKDCam:
+            cam_out = device.getOutputQueue("cam_out", 1, True)
+        else:
+            detection_in = device.getInputQueue("detection_in")
         detection_nn = device.getOutputQueue("detection_nn")
         reid_in = device.getInputQueue("reid_in")
         reid_nn = device.getOutputQueue("reid_nn")
@@ -103,12 +118,39 @@ def process_image(transform,processing_model,img):
         else:
             frame = img
 
+        if transform == 'ssd':
+
+            if frame is not None:
+                if not useOAKDCam:
+                    nn_data = depthai.NNData()
+                    nn_data.setLayer("input", to_planar(frame, (300, 300)))
+                    detection_in.send(nn_data)
+
+                in_nn = detection_nn.tryGet()
+
+                if in_nn is not None:
+                    # one detection has 7 numbers, and the last detection is followed by -1 digit, which later is filled with 0
+                    bboxes = np.array(in_nn.getFirstLayerFp16())
+                    # take only the results before -1 digit
+                    bboxes = bboxes[:np.where(bboxes == -1)[0][0]]
+                    # transform the 1D array into Nx7 matrix
+                    bboxes = bboxes.reshape((bboxes.size // 7, 7))
+                    # filter out the results which confidence less than a defined threshold
+                    bboxes = bboxes[bboxes[:, 2] > 0.5][:, 3:7]
+
+                    # if the frame is available, draw bounding boxes on it and show the frame
+                    for raw_bbox in bboxes:
+                        bbox = frame_norm2(frame, raw_bbox)
+                        cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 3)
+                    img  = frame
+
         #pedestrian reidentification https://github.com/luxonis/depthai-experiments/tree/master/pedestrian-reidentification
         if transform == 'pre':
 
             if frame is not None:
                 debug_frame = frame.copy()
 
+            if not useOAKDCam:
                 nn_data = depthai.NNData()
                 nn_data.setLayer("input", to_planar(frame, (544, 320)))
                 detection_in.send(nn_data)
@@ -151,9 +193,9 @@ def process_image(transform,processing_model,img):
                 x = (bbox[0] + bbox[2]) // 2
                 y = (bbox[1] + bbox[3]) // 2
                 results_path[result_id].append([x, y])
-                cv2.putText(debug_frame, str(result_id), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 1.0, (255, 255, 255))
+                cv2.putText(debug_frame, str(result_id), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 1.0, (255, 255, 0))
                 if len(results_path[result_id]) > 1:
-                    cv2.polylines(debug_frame, [np.array(results_path[result_id], dtype=np.int32)], False, (255, 0, 0), 2)
+                    cv2.polylines(debug_frame, [np.array(results_path[result_id], dtype=np.int32)], False, (255, 0, 255), 2)
                 # else:
                 #     print(f"Saw id: {result_id}")
             
@@ -238,6 +280,37 @@ def to_planar(arr: np.ndarray, shape: tuple) -> list:
     return [val for channel in cv2.resize(arr, shape).transpose(2, 0, 1) for y_col in channel for val in y_col]
 
 
+def create_pipeline_ssd():
+    global useOAKDCam
+    print("Creating pipeline...")
+    pipeline = depthai.Pipeline()
+
+    if useOAKDCam:
+        # ColorCamera
+        print("Creating Color Camera...")
+        cam = pipeline.createColorCamera()
+        cam.setPreviewSize(544, 320)
+        cam.setResolution(depthai.ColorCameraProperties.SensorResolution.THE_1080_P)
+        cam.setInterleaved(False)
+        cam.setBoardSocket(depthai.CameraBoardSocket.RGB)
+        cam_xout = pipeline.createXLinkOut()
+        cam_xout.setStreamName("cam_out")
+        cam.preview.link(cam_xout.input)
+
+    # NeuralNetwork
+    print("Creating Person Detection Neural Network...")
+    detection_in = pipeline.createXLinkIn()
+    detection_in.setStreamName("detection_in")
+    detection_nn = pipeline.createNeuralNetwork()
+    detection_nn.setBlobPath(str(Path("../OSSDC-VisionAI-Datasets/pretrained/oakd-mobile-ssd/mobilenet.blob").resolve().absolute()))
+    detection_nn_xout = pipeline.createXLinkOut()
+    detection_nn_xout.setStreamName("detection_nn")
+    detection_in.out.link(detection_nn.input)
+    detection_nn.out.link(detection_nn_xout.input)
+
+    print("Pipeline created.")
+    return pipeline
+
 def create_pipeline_people_reidentification():
     global useOAKDCam
     print("Creating pipeline...")
@@ -279,7 +352,6 @@ def create_pipeline_people_reidentification():
 
     print("Pipeline created.")
     return pipeline
-
 
 def create_pipeline_age_gen():
     global useOAKDCam
@@ -405,6 +477,7 @@ class Main:
         self.camera = camera
         self.create_pipeline()
         self.start_pipeline()
+        self.gaze = []
 
     def create_pipeline(self):
         print("Creating pipeline...")
@@ -624,3 +697,10 @@ class Main:
             self.run_camera()
         del self.device
 
+# nn data, being the bounding box locations, are in <0..1> range - they need to be normalized with frame width/height
+def frame_norm2(frame, bbox):
+    return (np.array(bbox) * np.array([*frame.shape[:2], *frame.shape[:2]])[::-1]).astype(int)
+
+
+# def to_planar(arr: np.ndarray, shape: tuple) -> list:
+#     return [val for channel in cv2.resize(arr, shape).transpose(2, 0, 1) for y_col in channel for val in y_col]

@@ -7,6 +7,10 @@ import numpy as np
 import cv2
 from av import VideoFrame
 import traceback 
+import subprocess as sp
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 from aiortc import (
     RTCIceCandidate,
@@ -33,14 +37,18 @@ import youtube_dl
 
 import subprocess
 
+# from twitchstream.outputvideo import TwitchBufferedOutputStream
+
+video_processing_module = []
+
 debug=True
 
 def debug_print(*argv):
     if(debug):
         print(*argv)
 
-#To monitor the output from video processing run on your PC this command:
-#ffplay -fflags nobuffer -f mjpeg tcp://0.0.0.0:45654?listen
+# To monitor the output from video processing run on your PC this command:
+# ffplay -fflags nobuffer -f mjpeg tcp://0.0.0.0:45654?listen
 ip = 'localhost' #replace with your PC IP where ffplay runs
 ip = None #comment to activate above IP
 
@@ -55,6 +63,23 @@ if ip is not None:
     clientsocket = None
 
 
+twitchStream = None
+
+def getTwitchStream(streamKey, width, height):
+    twitchStream = TwitchBufferedOutputStream(
+            twitch_stream_key=streamKey,
+            width=width,
+            height=height,
+            fps=30.,
+            verbose=True,
+            enable_audio=False)
+    return twitchStream
+
+# infoColor = (255,255,255)
+infoColor1 = (0,255,0)
+infoColor2 = (0,255,255)
+infoColor = infoColor1
+
 class VideoTransformTrack(MediaStreamTrack):
     """
     A video stream track that transforms frames from an another track.
@@ -62,14 +87,28 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, track, transform, signaling, model):
+    def __init__(self, track, transform, signaling, model, skipFrames=True, skipFramesCnt=0):
         super().__init__()  # don't forget this!
-        self.transform = transform
+        # self.transform = transform
+        self.transformLabel = None
+        self.transform = []
+        self.processing_model = []
+        for i in range(len(transform)):
+            (alg,subAlg) = transform[i]
+            self.processing_model.append(model[i])
+            self.transform.append(subAlg)        
+            if self.transformLabel is None: 
+                self.transformLabel = alg 
+            else:
+                self.transformLabel = self.transformLabel + "+" + alg 
+            # print(video_processing_module[i],self.transform[i],self.processing_model[i])        
+        # print(video_processing_module[0],transform[0])        
+        # video_processing_module[str(0)].init_model(transform[0])        
+
         self.track = track
         self.scale = 1
-        self.skipFrames = True
-#         self.skipFrames = False #use it for Youtube streaming
-        self.processing_model = model
+        #self.skipFrames = True
+        self.skipFrames = skipFrames #False #use it for Youtube streaming
         self.prevTime = time.time()
         self.starttime1 = time.time()
         self.colors = "Not computed"
@@ -78,11 +117,24 @@ class VideoTransformTrack(MediaStreamTrack):
         self.frameCount = 0
         self.prevFrameCount = 0
         self.realFPS = 0
+        self.skipFramesCnt = skipFramesCnt #to skip frames at begining of video
+        self.imgM = {}
+        self.trackPts = {}
         
     async def recv(self):
-        global clientsocket
+        global clientsocket, twitchStream, infoColor, video_processing_module
         frame = await self.track.recv()
         self.frameCount=self.frameCount+1
+
+        if self.skipFramesCnt>0:
+          while not self.track._queue.empty():
+              frame = await self.track.recv()
+              self.frameCount=self.frameCount+1
+              if self.skipFramesCnt==0:
+                break
+              self.skipFramesCnt=self.skipFramesCnt-1
+          return frame
+        
         new_frame = frame
 
         # Consume all available frames.
@@ -91,7 +143,7 @@ class VideoTransformTrack(MediaStreamTrack):
           while not self.track._queue.empty():
               frame = await self.track.recv() 
               self.frameCount=self.frameCount+1
-                
+
         self.frameProcessedCount=self.frameProcessedCount+1
 
         timer = cv2.getTickCount()
@@ -122,9 +174,22 @@ class VideoTransformTrack(MediaStreamTrack):
 
 
             #img = cv2.pyrDown(img)
-            trakingPoints,img = video_processing_module.process_image(self.transform,self.processing_model,img)
+            imgOut = None
+            # i = 0
+            for i in range(len(self.transform)):
+                imgIn = img.copy()
+                self.trackPts[i], self.imgM[i] = video_processing_module[i].process_image(self.transform[i],self.processing_model[i],imgIn)
+                if i>0:
+                    imgOut = cv2.addWeighted(imgOut, 1/len(self.transform), self.imgM[i], 1/len(self.transform), 0.0)
+                else:
+                    imgOut = self.imgM[i]
+                # i=i+1
 
-            y1 = y+25
+            # print(imgOut.shape,len(self.transform))
+            trackingPoints = self.trackPts[len(self.transform)-1]
+            img = imgOut #self.imgM[len(self.transform.keys())-1]
+
+            y1 = y
 
             if 1==2: # for robot control - works with MiDaS for now
                 crop_img = img[y:y+y, x:x+x]
@@ -160,40 +225,64 @@ class VideoTransformTrack(MediaStreamTrack):
             #         cv2.rectangle(img, (x,y), (x+x,y+y), (50,170,50), 2)
                     cv2.rectangle(img, (x,y), (x+x,y+y), (0,0,0), 2)
 
-                    cv2.putText(img, self.colors[0], (10,y1+125+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-                    cv2.putText(img, self.colors[1], (10,y1+150+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-                    cv2.putText(img, self.colors[2], (10,y1+175+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
+                    cv2.putText(img, self.colors[0], (10,y1+125+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                    cv2.putText(img, self.colors[1], (10,y1+150+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                    cv2.putText(img, self.colors[2], (10,y1+175+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
 
     #         img = cv2.resize(img,(cols//4, rows//4))
     #         y = h//3
     #         x = w//3
     #         y1 = y+25                
 
-            cv2.putText(img, "ImgSize: "+str(w)+"x"+str(h), (10,y1+50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-            cv2.putText(img, "FrmCnt: "+str(self.frameCount), (10,y1+75), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-            cv2.putText(img, "FrmProcCnt: "+str(self.frameProcessedCount), (10,y1+100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-            cv2.putText(img, "TrkPt: "+str(len(trakingPoints)), (10,y1+125), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
+            cv2.putText(img, "Alg: "+self.transformLabel, (10,y1-25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "ImagSize: "+str(w)+"x"+str(h), (10,y1+50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "FramCnt: "+str(self.frameCount), (10,y1+75), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "FramProcCnt: "+str(self.frameProcessedCount), (10,y1+100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "TrkPt: "+str(len(trackingPoints)), (10,y1+125), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
 
             # Calculate Frames per second (FPS)
             fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
 
-            cv2.putText(img, "ProcFPS : " + str(int(fps)), (10,y1), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
-            cv2.putText(img, "RealFPS : " + str(int(self.realFPS)), (10,y1+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,255,255), 2)
+            cv2.putText(img, "ProcFPS : " + str(int(fps)), (10,y1), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "RealFPS : " + str(int(self.realFPS)), (10,y1+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            cv2.putText(img, "Race AI with us at OSSDC.org - Open Source Self Driving Initiative ", (10,h-50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
 
     #         img = cv2.resize(img,(cols//3, rows//3))
 
             delta = time.time() - self.prevTime
             if delta > 1:
-                 self.realFPS = (self.frameCount-self.prevFrameCount)/delta
-                 self.prevFrameCount = self.frameCount
-                 self.prevTime = time.time()
+                self.realFPS = (self.frameCount-self.prevFrameCount)/delta
+                self.prevFrameCount = self.frameCount
+                self.prevTime = time.time()
+                if infoColor == infoColor1:
+                    infoColor = infoColor2
+                else:
+                    infoColor = infoColor1
 
+            try:
+                if twitchStream is not None:
+                    ret2, frame2 = cv2.imencode('.png', img)
+                    twitchStream.stdin.write(frame2.tobytes())
+                #     if twitchStream.get_video_frame_buffer_state() < 30:
+                #         # frame = np.random.rand(480, 640, 3)
+                #         imgROI = img[0:359, 0:639]
+                #         twitchStream.send_video_frame(imgROI)
+            except Exception as e:
+                twitchStream = None
+                track = traceback.format_exc()
+                print("Twitch exception",e)
+                pass    
 
             try:
                 if clientsocket is not None:
-                    #img = img.to_ndarray(format="bgr24")
+                    # img = img.to_ndarray(format="bgr24")
                     data = cv2.imencode('.jpg', img)[1].tobytes()
                     clientsocket.send(data)          
+                    # cv2.imshow(self.transformLabel, img)
+                    # k = cv2.waitKey(1) & 0xff
+                    # if k == 27 : 
+                    #     break
+
             except Exception as e:
                 debug_print(e)
                 clientsocket = None
@@ -203,17 +292,20 @@ class VideoTransformTrack(MediaStreamTrack):
             new_frame.pts = frame.pts
             new_frame.time_base = frame.time_base 
         except Exception as e1:
-            debug_print(e1)
+            track = traceback.format_exc()
+            print(track)
+            print("RaceOSSDC",e1)
+            pass
 
         return new_frame
 
 
-async def run(pc, player, recorder, signaling, transform, model):
+async def run(pc, player, recorder, signaling, transform, model, skipFrames, skipFramesCnt):
     def add_tracks():
       debug_print("player",player)
       if player and player.video:
           local_video = player.video
-          local_video = VideoTransformTrack(player.video, transform=transform, signaling=signaling, model=model)
+          local_video = VideoTransformTrack(player.video, transform=transform, signaling=signaling, model=model, skipFrames=skipFrames, skipFramesCnt=skipFramesCnt)
           pc.addTrack(local_video)
       else:
           pc.addTransceiver('video','sendrecv') #this is the trick to echo webcam back
@@ -233,8 +325,10 @@ async def run(pc, player, recorder, signaling, transform, model):
           debug_print("track ended")
           signaling.trackEnded=True
 
-    trackEnded = False
+
     params = await signaling.connect()
+
+    trackEnded = False
 
     await sendSubscribeMessage()
 
@@ -257,6 +351,7 @@ async def run(pc, player, recorder, signaling, transform, model):
                   else:
                       # add_tracks()
                       await pc.setRemoteDescription(obj)
+                      print("Start recorder anwser")
                       await recorder.start()
                       await signaling.send(pc.localDescription)
               if obj.type == "offer":
@@ -265,6 +360,7 @@ async def run(pc, player, recorder, signaling, transform, model):
                   else:
                       # add_tracks()
                       await pc.setRemoteDescription(obj)
+                      print("Start recorder offer")
                       await recorder.start()
                       await signaling.send(pc.localDescription)
 
@@ -284,53 +380,97 @@ async def run(pc, player, recorder, signaling, transform, model):
           else:
               debug_print("obj not handled:",obj)
         except Exception as e:
+            track = traceback.format_exc()
+            print(track)
+            print("WebRTC",e)
+
             noneCnt=noneCnt+1
-            debug_print("error in run loop",e)
+            #debug_print("error in run loop",e)
             if(noneCnt>5):
                 break
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="RaceOSSDC")
     
     parser.add_argument("--play-from", help="Read the media from a file and sent it."),
-    parser.add_argument("--record-to", help="Write received media to a file."),
+    parser.add_argument("-rec", help="Write received media to a file."),
     parser.add_argument('-t','--transform', type=str)
+    parser.add_argument('--videoUrl', type=str, default=None,  nargs='?', const=None)
+    parser.add_argument('--skipFramesCnt', type=str, default=0, nargs='?', const=0)
+    parser.add_argument('--twitchStreamKey', type=str, default=None,  nargs='?', const=None )
+
     args, unknown = parser.parse_known_args()
+
 
     transform = None
     if args.transform:
         transform = args.transform
 
+    print("Room name:",roomName)
     import importlib
 
-    module_name = transform.split(".")
-    if len(module_name) == 2:
-           transform = module_name[1]
-           module_name = module_name[0]
-    else:
-           module_name = module_name[0]
-           transform = module_name
+            
+    algos = transform.split("+") #alows blending algos
+    transform = []
+    model = []
+    modules = []
+    i = 0
+    for alg in algos:
+        module_name = alg.split(".")
+        if len(module_name) == 2:
+            subAlg = module_name[1]
+            module_name = module_name[0]
+        else:
+            module_name = module_name[0]
+            subAlg = module_name
+        debug_print("We will apply this transform:",subAlg, "from module:",module_name)
+        moduleIndex = -1
+        if module_name in modules:
+            moduleIndex = modules.index(module_name)
+        if moduleIndex == -1:
+            video_processing_module.append(importlib.import_module("video_processing_"+module_name))
+        else:
+            video_processing_module.append(video_processing_module[moduleIndex])
 
-    debug_print("We will apply this transform:",transform, "from module:",module_name)
-        
-    video_processing_module = importlib.import_module("video_processing_"+module_name)
-    print('video_processing_module',video_processing_module)
-    
-    
-    model,args1 = video_processing_module.init_model(transform)
-    
+        modules.append(module_name)
+        # importlib.exec_module(video_processing_module[i])
+
+        # video_processing_module.append(vpm)
+        print('video_processing_module',video_processing_module[i], subAlg)
+        m, args1 = video_processing_module[i].init_model(subAlg)
+        transform.append((alg, subAlg))
+        model.append(m)
+        i=i+1
+
     # create signaling and peer connection
-    args.room = '123456'
+    args.room = roomName
 
     videoUrl = None 
-#     videoUrl = 'https://youtu.be/uuQlMCMT71I' #uncomment to overide with a Youtube video source, set skipFrames to False for Youtube streaming
-  
+
+    skipFrames = False
+    skipFramesCnt = 0
+
+    if args.skipFramesCnt:
+        skipFramesCnt = int(args.skipFramesCnt)
+
+    if args.videoUrl:
+        videoUrl = args.videoUrl
+
     if videoUrl is not None:
-        #install youtube-dl for this to work: pip install youtube-dl
-        command = "youtube-dl -f 'bestvideo[height<1100]' -g '"+videoUrl+"'" 
-        videoUrl = subprocess.check_output(command, shell = True).decode("utf-8").strip()
-        args.play_from = videoUrl
+        if "https://youtube.com" in videoUrl:
+            #install youtube-dl for this to work: pip install youtube-dl
+            command = "youtube-dl -f 'bestvideo[height<1000]' -g '"+videoUrl+"'" 
+            # command = "youtube-dl -f 'bestvideo' -g '"+videoUrl+"'" 
+            videoUrl = subprocess.check_output(command, shell = True).decode("utf-8").strip()
+            args.play_from = videoUrl
+        elif "direct" == videoUrl or "/dev/" in videoUrl or "localhost" in videoUrl:
+            skipFrames = True
+        else:
+            args.play_from = videoUrl
+    else:
+        skipFrames = True
 
     print('videoUrl=',videoUrl)
 
@@ -340,34 +480,77 @@ if __name__ == "__main__":
     
     stunServer = RTCIceServer("stun:race.ossdc.org:5349")
 
+    turnServer = RTCIceServer("turn:race.ossdc.org:5349")
+    # url: 'turn:race.ossdc.org:5349',
+    turnServer.username = "testturn"
+    turnServer.credential = roomName
+
     configuration.iceServers = []
     configuration.iceServers.append(stunServer)
+    #configuration.iceServers.append(turnServer)
 
     pc = RTCPeerConnection(configuration=configuration)
 
-
     # create media source
     if args.play_from:
-        player = MediaPlayer(args.play_from)
+        if "/dev/" in args.play_from:
+            # options = {"framerate": "30", "video_size": "640x480"}
+            player = MediaPlayer(args.play_from, format="v4l2")#,options=options)
+        else:
+            player = MediaPlayer(args.play_from)
     else:
         player = None
 
     # create media sink
-    if args.record_to:
-        recorder = MediaRecorder(args.record_to)
+    if args.rec:
+        print('record to:',args.rec)
+        recorder = MediaRecorder(args.rec)
     else:
         recorder = MediaBlackhole()
 
     loop = asyncio.get_event_loop()
 
+    if args.twitchStreamKey:
+        twitchStreamKey = args.twitchStreamKey
+        # twitchStream = getTwitchStream(twitchStreamKey,640,360)
+        sizeStr = "486x1062"
+        fps = 30
+        rtmp_server = "rtmp://yto.contribute.live-video.net/app/"+twitchStreamKey
+        
+        command = ['ffmpeg',
+                '-re',
+                '-s', sizeStr,
+                '-r', str(fps),  # rtsp fps (from input server)
+                '-i', '-',
+                
+                # You can change ffmpeg parameter after this item.
+                '-pix_fmt', 'yuv420p',
+                '-r', '30',  # output fps
+                '-g', '50',
+                '-c:v', 'libx264',
+                '-b:v', '2M',
+                '-bufsize', '64M',
+                '-maxrate', "4M",
+                '-preset', 'veryfast',
+                '-rtsp_transport', 'tcp',
+                '-segment_times', '5',
+                #    '-f', 'rtsp',
+                #    rtsp_server]
+                '-f', 'flv',
+                rtmp_server]
+
+        twitchStream = sp.Popen(command, stdin=sp.PIPE)
+
     try:
         loop.run_until_complete(
-            run(pc=pc, player=player, recorder=recorder, signaling=signaling,transform=transform, model=model)
+            run(pc=pc, player=player, recorder=recorder, signaling=signaling,transform=transform, model=model, skipFrames=skipFrames, skipFramesCnt=skipFramesCnt)
         )
     except Exception as e:
         debug_print(e)
     finally:
-        loop.close()
-        loop.run_until_complete(signaling.close())
+        #loop.close()
+        loop.run_until_complete(recorder.stop())
+        #loop.run_until_complete(signaling.close())
         loop.run_until_complete(pc.close())
+
 

@@ -1,3 +1,4 @@
+import traceback
 import cv2
 import numpy as np
 import sys
@@ -17,6 +18,8 @@ x = 200
 y = 350
 w = 150
 h = 150
+
+frameCnt = 0
 
 def create_blank(width, height, rgb_color=(0, 0, 0)):
     """Create new image(numpy array) filled with certain color in RGB"""
@@ -49,8 +52,9 @@ def init_model(transform):
 
 
 def process_image(transform,processing_model,img):
-    global previous_grey, hsv, skip_frames,hsv_roi,roi_hist, term_criteria,x, y, w, h
+    global previous_grey, hsv, skip_frames,hsv_roi,roi_hist, term_criteria,x, y, w, h,frameCnt
     tracks = []
+    frameCnt = frameCnt+1
     try:
         if transform == 'edges':
             img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
@@ -69,11 +73,8 @@ def process_image(transform,processing_model,img):
               cv2.THRESH_BINARY, 9, 2)
           img_edges = cv2.cvtColor(img_edges, cv2.COLOR_GRAY2RGB)
 
-          try:
-              # combine color and edges
-              img = cv2.bitwise_and(img_color, img_edges)
-          except:
-            pass
+          # combine color and edges
+          img = cv2.bitwise_and(img_color, img_edges)
 
         elif transform == 'detect-color':           
             hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -86,21 +87,20 @@ def process_image(transform,processing_model,img):
             img = new_img
 
         elif transform == 'contours':           
-            blurred_frame = cv2.GaussianBlur(img, (5, 5), 0)
-            hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+            image = img #cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            blurred_frame = image #cv2.GaussianBlur(image, (5, 5), 0)
+            gray = cv2.cvtColor(blurred_frame, cv2.COLOR_RGB2GRAY)
+            _, binary = cv2.threshold(gray, 225, 255, cv2.THRESH_BINARY_INV)
 
-            low_red = np.array([161, 155, 84])
-            high_red = np.array([179, 255, 255])
-            mask = cv2.inRange(hsv, low_red, high_red)
-
-            contours,_  = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             tracks = contours
 
-            for contour in contours:
-              area = cv2.contourArea(contour)
-              if area > 500:
-                cv2.drawContours(img, contour, -1, (0, 255, 0), 3)
+            img = cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
+            # for contour in contours:
+            #   area = cv2.contourArea(contour)
+            #   if area > 500:
+            #     cv2.drawContours(img, contour, -1, (0, 255, 0), 3)
 
         elif transform == 'dense-of':
           if previous_grey is None:
@@ -158,12 +158,15 @@ def process_image(transform,processing_model,img):
         elif transform == 'rotate':
             # rotate image
             rows, cols, _ = img.shape
-            M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frame.time * 45, 1)
+            M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frameCnt * 5, 1)
             img = cv2.warpAffine(img, M, (cols, rows))
 
-    except:
+    except Exception as e:
+        track = traceback.format_exc()
+        print(track)
+        print("OpenCV Exception",e)
         pass
-                
+
     return tracks,img
 
 def drawSIFT(image,sift):

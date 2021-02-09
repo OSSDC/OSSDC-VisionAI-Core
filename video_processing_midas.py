@@ -1,3 +1,4 @@
+import traceback
 import cv2
 import numpy as np
 import sys
@@ -65,13 +66,17 @@ def process_image(transform,processing_model,img):
     global previous_grey, hsv, skip_frames,hsv_roi,roi_hist, term_criteria,x, y, w, h
     tracks = []
     try:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
-        img = get_depth(img,processing_model[0],processing_model[1], processing_model[2])
-        img = (img/256).astype(np.uint8)
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        img = cv2.applyColorMap(img, cv2.COLORMAP_JET)
-#         return img
-    except:
+        img1 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
+        img1 = get_depth(img1,processing_model[0],processing_model[1], processing_model[2])
+        img1 = (img1/256).astype(np.uint8)
+        img1 = cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
+        img1 = cv2.applyColorMap(img1, cv2.COLORMAP_JET)
+        img = img1
+
+    except Exception as e:
+        track = traceback.format_exc()
+        print(track)
+        print("MiDaS Exception",e)
         pass
                 
     return tracks,img

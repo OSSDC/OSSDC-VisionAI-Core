@@ -1,3 +1,4 @@
+import traceback
 import cv2
 import numpy as np
 import sys
@@ -104,7 +105,10 @@ def process_image(transform,processing_model,img):
         img = (img/256).astype(np.uint8)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         img = cv2.applyColorMap(img, cv2.COLORMAP_JET)
-    except:
+    except Exception as e:
+        track = traceback.format_exc()
+        print(track)
+        print("OAK-D Exception",e)
         pass
                 
     return tracks,img
