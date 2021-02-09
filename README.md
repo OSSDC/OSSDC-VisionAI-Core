@@ -32,9 +32,9 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 ###### OAK-D Spacial AI camera 
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_gaze_1.gif" width="300px">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_pedestrian_reidentification_1.gif" width="300px">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_ssd_1.gif" width="300px">
+    <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/oak-d_gaze_1.gif?raw=true" width="300px">
+    <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/oak-d_pedestrian_reidentification_1.gif?raw=true" width="300px">
+    <!-- img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/oak-d_ssd_1.gif?raw=true" width="300px" -->
 </p>
 
 (**Gaze estimation** video can be found [here](https://www.youtube.com/watch?v=xMgNWRWytOk))
@@ -75,9 +75,9 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
 ###### MiDaS mono depth
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/midas_person_1.gif" width="300px">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/midas_night_1.gif" width="300px">
-    <img src="https://raw.githubusercontent.com/OSSDC/OSSDC-VisionAI-Core/master/docs/gifs/midas_objects_1.gif" width="300px">
+    <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/midas_person_1.gif?raw=true" width="300px">
+    <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/midas_night_1.gif?raw=true" width="300px">
+    <img src="https://github.com/OSSDC/OSSDC-VisionAI-Core/blob/master/docs/midas_objects_1.gif?raw=true" width="300px">
 </p>
 
 (**MiDaS mono-depth person demo** video can be found [here](https://www.youtube.com/watch?v=xMgNWRWytOk))
