@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import logging
@@ -22,8 +23,16 @@ BYE = object()
 
 start_timer = None
 
-roomName = 'TestRoom123456' #replace this with your room name and password
-passCode = '123456'
+roomName = 'TestRoom-123456' #replace this with your room name and password
+passCode = '123456' #defailt password in mobile app
+
+parser = argparse.ArgumentParser(description="RaceOSSDC")
+parser.add_argument('-r','--room', type=str, default=roomName)
+args, unknown = parser.parse_known_args()
+
+if args.room:
+    roomName = args.room
+
 droneRoomName = hashlib.md5((roomName+'-'+passCode).encode("utf-8")).hexdigest()
 
 debug=False
@@ -32,7 +41,6 @@ def debug_print(*argv):
     if(debug):
         debug_print(*argv)
     
-
 sio = socketio.AsyncClient()
 
 sio_messages = []
@@ -151,7 +159,18 @@ class RaceOssdcSignaling:
     async def connect(self):
         join_url = self._origin + "/join/#" + self._room
 
-        await sio.connect(self._origin)
+        for i in range (5):
+          try:
+            #print("SocketIO connect to ",join_url)
+            await sio.connect(self._origin)
+            print("SocketIO connected")
+            break
+          except Exception as e:
+            print("SocketIO error ", e)
+            if i<5:
+              continue
+
+        #await sio.connect(self._origin)
         params = {}
         params["is_initiator"] = "true"
 
