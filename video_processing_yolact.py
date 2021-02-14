@@ -6,6 +6,11 @@ import dlib
 from datetime import datetime
 import os
 
+# Yolact instance segmentation
+# https://github.com/dbolya/yolact
+#
+# See Google Colab notebook for setup instruction
+
 transform='yolact' #object segmentation
 
 # counter = 0

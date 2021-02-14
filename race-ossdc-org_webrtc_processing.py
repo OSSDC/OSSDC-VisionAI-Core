@@ -8,9 +8,12 @@ import cv2
 from av import VideoFrame
 import traceback 
 import subprocess as sp
-import uvloop
 
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except:
+    pass
 
 from aiortc import (
     RTCIceCandidate,
