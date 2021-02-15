@@ -10,7 +10,7 @@
 #SDC
 # declare -a algos=('oakd.ssd' 'yolact' "midas" "midas21" 'opencv.dense-of' "opencv.edges")
 
-declare -a algos=('opencv.edges')
+# declare -a algos=('opencv.edges')
 #declare -a algos=('head_pose')
 # declare -a algos=('posenet')
 #declare -a algos=('face_landmarks')
@@ -49,6 +49,15 @@ declare -a algos=('opencv.edges')
 # declare -a algos=('sense.gesture')
 # declare -a algos=('sense.fitness')
 
+# declare -a algos=('gaze_est')
+
+# declare -a algos=('mediapipe.facemesh')
+# declare -a algos=('mediapipe.hands')
+# declare -a algos=('mediapipe.pose')
+# declare -a algos=('mediapipe.holistic')
+
+declare -a algos=('mediapipe.holistic' 'mediapipe.facemesh' 'mediapipe.hands' 'mediapipe.pose')
+
 pkill -9 -f race
 sleep 1
 pkill -9 -f race
@@ -66,7 +75,7 @@ do
       python3 race-ossdc-org_webrtc_processing.py -t $val --room $1 --videoUrl "$2" --skipFramesCnt $3 --twitchStreamKey "$4" -mt small&
       # python3.8 race-ossdc-org_no_webrtc_processing.py -t $val --room $1 --videoUrl "$2" --skipFramesCnt $3 --twitchStreamKey "$4" &
       #-rec "$(date +"../%Y_%m_%d_%I_%M_%p").mp4"&
-      sleep 50
+      sleep 60
       pkill -9 -f race
       sleep 1
       pkill -9 -f race
