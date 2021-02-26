@@ -58,6 +58,8 @@
 
 declare -a algos=('mediapipe.holistic' 'mediapipe.facemesh' 'mediapipe.hands' 'mediapipe.pose')
 
+# declare -a algos=('deepmind.nfnets')
+
 pkill -9 -f race
 sleep 1
 pkill -9 -f race
