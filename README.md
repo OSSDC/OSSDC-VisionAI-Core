@@ -6,8 +6,6 @@ This project has support for Race.OSSDC.org WebRTC based platform, to allow for 
 
 To contribute follow the approach in video_processing files to add your own algorithm and create a PR to integrate it in this project.
 
-Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-VisionAI-Datasets project.
-
 <p align="center">
 OSSDC VisionAI Demo Reel - run the algoritms in Google Colab
 </p>
@@ -43,13 +41,15 @@ OSSDC VisionAI Demo Reel - run the algoritms in Google Colab
 
 (**MiDaS mono-depth objects demo** video can be found [here]())
 
+Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-VisionAI-Datasets project.
+
 ## Install prerequisites
 
 - pip install opencv-python # required for all video processors
 - pip install opencv-contrib-python # required for video_processing_opencv
-- pip install aiortc aiohttp python-socketio # required for WebRTC
+- pip install aiortc aiohttp websockets python-engineio==3.14.2 python-socketio[client]==4.6.0 # required for WebRTC
 - pip install dlib # required for face_landmarks
-- pip install pytorch torchvision
+- pip install torch torchvision
 - pip install tensorflow-gpu
 - pip install youtube-dl # required for YouTube streaming sources
 
@@ -63,6 +63,26 @@ OSSDC VisionAI Demo Reel - run the algoritms in Google Colab
 - Prerequisite steps every time before running the python video processing scripts
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
+
+- DeepMind NFNets demo
+    - Install DeepMind NFNets - see install steps in video_processing_deepmind.py or OSSDC_VisionAI_demo_reel.ipynb notebook
+    - run the DeepMind NFNets video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t deepmind.nfnets --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable deepmind.nfnets line)    
+    - Demo samples images
+        https://www.linkedin.com/feed/update/urn:li:activity:6766007580679557120?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A6766007580679557120%2C6768387554418016256%29
+
+- MediaPipe Holistic demo
+    - Install MediaPipe - see install steps in video_processing_mediapipe.py or OSSDC_VisionAI_demo_reel.ipynb notebook
+    - run the MediaPipe holistic video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t mediapipe.holistic --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable mediapipe.holistic line) 
+    - Demo video
+    
+        MediaPipe holistic demo 
+        
+        Isn't this fun?! MediaPipe Holistic neural net model processed in real time on Google Cloud
+        https://www.youtube.com/watch?v=0l9Bb5IC86E
 
 - OAK-D gaze estimation demo, the proceessing is done on Luxonis OAK-D camera vision processing unit https://store.opencv.ai/products/oak-d
     - Install OAK-D DepthAI - see install steps in video_processing_oakd.py
