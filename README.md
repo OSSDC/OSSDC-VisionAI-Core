@@ -64,6 +64,14 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
+- Detectron2 demo
+    - Install Detectorn2 - see install steps in video_processing_detectron2.py or OSSDC_VisionAI_demo_reel.ipynb notebook
+    - run the Detectron2 video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t detectron2 --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable detectron2 line)    
+    - Demo videos
+        TBD
+
 - DeepMind NFNets demo
     - Install DeepMind NFNets - see install steps in video_processing_deepmind.py or OSSDC_VisionAI_demo_reel.ipynb notebook
     - run the DeepMind NFNets video processor on the video stream from VisionAI Android app
