@@ -62,6 +62,7 @@ declare -a algos=('mediapipe.holistic' 'mediapipe.facemesh' 'mediapipe.hands' 'm
 
 # declare -a algos=('oakd_mediapipe.hands')
 
+# declare -a algos=('detectron2')
 
 pkill -9 -f race
 sleep 1
