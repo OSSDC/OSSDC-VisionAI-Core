@@ -64,6 +64,18 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
+
+- DepthAI (OAK-D) stereo smart camera Side-By-Side 3D streaming demo
+    - Install latest DepthAI API from https://github.com/luxonis/depthai-python
+    - run the DepthAI video processor on the stereo or RGB video stream from OAK-D camera and stream it to VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t depthai.sbs --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable depthai.sbs line)
+        - python race-ossdc-org_webrtc_processing.py -t depthai.rgb --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable depthai.rgb line)
+    - Demo videos
+        Live 3D video streamed over internet from a DepthAI OAK-D with OSSDC VisionAI
+        https://www.youtube.com/watch?v=28awrl5MipQ (use a VR head set to see the 3D depth)
+
 - Detectron2 demo
     - Install Detectron2 - see install steps in video_processing_detectron2.py or OSSDC_VisionAI_demo_reel.ipynb notebook
     - run the Detectron2 video processor on the video stream from VisionAI Android app
