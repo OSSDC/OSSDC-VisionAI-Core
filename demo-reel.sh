@@ -64,6 +64,9 @@ declare -a algos=('mediapipe.holistic' 'mediapipe.facemesh' 'mediapipe.hands' 'm
 
 # declare -a algos=('detectron2')
 
+# declare -a algos=('depthai.sbs')
+# declare -a algos=('depthai.rgb')
+
 pkill -9 -f race
 sleep 1
 pkill -9 -f race

@@ -123,7 +123,7 @@ class VideoTransformTrack(MediaStreamTrack):
         self.skipFramesCnt = skipFramesCnt #to skip frames at begining of video
         self.imgM = {}
         self.trackPts = {}
-        
+        self.prevGoodFrame = None        
     async def recv(self):
         global clientsocket, twitchStream, infoColor, video_processing_module
         frame = await self.track.recv()
@@ -291,7 +291,14 @@ class VideoTransformTrack(MediaStreamTrack):
                 clientsocket = None
                 pass     
 
-            new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            # new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            try:
+                new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+                self.prevGoodFrame = new_frame
+            except Exception as e:
+                if self.prevGoodFrame is not None:
+                    new_frame = self.prevGoodFrame
+                pass   
             new_frame.pts = frame.pts
             new_frame.time_base = frame.time_base 
         except Exception as e1:
@@ -400,6 +407,7 @@ if __name__ == "__main__":
     parser.add_argument("--play-from", help="Read the media from a file and sent it."),
     parser.add_argument("-rec", help="Write received media to a file."),
     parser.add_argument('-t','--transform', type=str)
+    parser.add_argument('--skipFrames', type=str, default=None)
     parser.add_argument('--videoUrl', type=str, default=None,  nargs='?', const=None)
     parser.add_argument('--skipFramesCnt', type=str, default=0, nargs='?', const=0)
     parser.add_argument('--twitchStreamKey', type=str, default=None,  nargs='?', const=None )
@@ -462,13 +470,13 @@ if __name__ == "__main__":
         videoUrl = args.videoUrl
 
     if videoUrl is not None:
-        if "https://youtube.com" in videoUrl:
+        if "youtube.com" in videoUrl:
             #install youtube-dl for this to work: pip install youtube-dl
             command = "youtube-dl -f 'bestvideo[height<1000]' -g '"+videoUrl+"'" 
             # command = "youtube-dl -f 'bestvideo' -g '"+videoUrl+"'" 
             videoUrl = subprocess.check_output(command, shell = True).decode("utf-8").strip()
             args.play_from = videoUrl
-        elif "direct" == videoUrl or "/dev/" in videoUrl or "localhost" in videoUrl:
+        elif "direct" == videoUrl:
             skipFrames = True
         else:
             args.play_from = videoUrl
@@ -499,6 +507,7 @@ if __name__ == "__main__":
         if "/dev/" in args.play_from:
             # options = {"framerate": "30", "video_size": "640x480"}
             player = MediaPlayer(args.play_from, format="v4l2")#,options=options)
+            skipFrames = True
         else:
             player = MediaPlayer(args.play_from)
     else:
@@ -510,6 +519,12 @@ if __name__ == "__main__":
         recorder = MediaRecorder(args.rec)
     else:
         recorder = MediaBlackhole()
+
+    if args.skipFrames:
+        if args.skipFrames == 'true':
+            skipFrames = True
+        else:
+            skipFrames = False
 
     loop = asyncio.get_event_loop()
 

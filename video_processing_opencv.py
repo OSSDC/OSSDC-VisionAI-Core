@@ -48,6 +48,20 @@ def init_model(transform):
     elif transform == 'fast':
         fast = cv2.FastFeatureDetector_create()
         return fast, None
+    elif transform == 'lkt':
+        lk_params = dict( winSize  = (15, 15),#(15, 15),
+                          maxLevel = 3,#2,
+                          criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 3, 0.01))
+
+        feature_params = dict( maxCorners = 5000, #500,
+                              qualityLevel = 0.1, #0.3,
+                              minDistance = 3, #7,
+                              blockSize = 3 ) #7 )
+        track_len = 25
+        detect_interval = 15
+        tracks = []                              
+        return (lk_params,feature_params,track_len,detect_interval,tracks), None
+
     return None, None
 
 
@@ -119,9 +133,9 @@ def process_image(transform,processing_model,img):
                 hsv[...,1] = 255
 
         elif transform == 'sift': 
-          traks, img = drawSIFT(img,processing_model)
+          tracks, img = drawSIFT(img,processing_model)
         elif transform == 'fast': 
-          traks, img = drawFAST(img,processing_model)
+          tracks, img = drawFAST(img,processing_model)
         elif transform == 'orb':
           featuresDetector = processing_model
           gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -160,6 +174,73 @@ def process_image(transform,processing_model,img):
             rows, cols, _ = img.shape
             M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frameCnt * 5, 1)
             img = cv2.warpAffine(img, M, (cols, rows))
+
+        elif transform == 'lkt':
+            (lk_params,feature_params,track_len,detect_interval,tracks) = processing_model
+            # frame = img
+            frame_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            vis = img
+
+            if len(tracks) > 0:
+                # try:
+                img0, img1 = previous_grey, frame_gray
+                p0 = np.float32([tr[-1] for tr in tracks]).reshape(-1, 1, 2)
+                p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
+                p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
+                d = abs(p0-p0r).reshape(-1, 2).max(-1)
+                good = d < 1
+                new_tracks = []
+                for tr, (x, y), good_flag in zip(tracks, p1.reshape(-1, 2), good):
+                    if not good_flag:
+                        continue
+                    tr.append((x, y))
+                    if len(tr) > track_len:
+                        del tr[0]
+                    new_tracks.append(tr)
+                    cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
+                tracks = new_tracks
+                cv2.polylines(vis, [np.int32(tr) for tr in tracks], False, (0, 255, 0))
+                # draw_str(vis, (20, 20), 'track count: %5d FPS = %0.2f' % (len(tracks), fpsValue))
+                # except:
+                #     # tracks = []
+                #     pass
+
+            if frameCnt % detect_interval == 0:
+                mask = np.zeros_like(frame_gray)
+                mask[:] = 255
+                for x, y in [np.int32(tr[-1]) for tr in tracks]:
+                    cv2.circle(mask, (x, y), 5, 0, -1)
+                p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
+                if p is not None:
+                    for x, y in np.float32(p).reshape(-1, 2):
+                        tracks.append([(x, y)])
+            previous_grey = frame_gray
+            img = vis
+        if transform == 'sbs':
+            # black = np.zeros((900,1600), dtype = "uint8")
+            # h,w = black.shape
+            # img = cv2.cvtColor(black,cv2.COLOR_GRAY2RGB)
+            img = img 
+        elif transform == 'sbs-rg':
+            black = np.zeros((900,1600), dtype = "uint8")
+            h,w = black.shape
+            #extract blue channel
+            # blue_channel = img[:,:,0]
+            #extract green channel
+            green_channel = img[:,:,1]
+            #extract red channel
+            red_channel = img[:,:,2]
+
+            ih,iw = red_channel.shape
+            # print(h,w, ih,iw)
+            # temp = np.concatenate((green_channel,red_channel), axis = 1)
+            # h,w = black.shape
+
+            diff = 0
+            black[h//2-ih//2 : h//2 + ih//2, w//2 - iw - diff : w//2 - diff] = green_channel #red_channel #green_channel
+            black[h//2-ih//2 : h//2 + ih//2, w//2 + diff : w//2 + iw + diff] = red_channel
+            # black[119:(h-121), 119:w-121] = temp
+            img = cv2.cvtColor(black,cv2.COLOR_GRAY2RGB)             
 
     except Exception as e:
         track = traceback.format_exc()
