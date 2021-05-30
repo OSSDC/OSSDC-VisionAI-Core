@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import sys
 import argparse
-import dlib
+# import dlib
 from datetime import datetime
 import os
 

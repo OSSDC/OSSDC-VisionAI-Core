@@ -26,7 +26,7 @@ setup_logger()
 # import some common libraries
 import numpy as np
 import os, json, cv2, random
-from google.colab.patches import cv2_imshow
+# from google.colab.patches import cv2_imshow
 
 # import some common detectron2 utilities
 from detectron2 import model_zoo
