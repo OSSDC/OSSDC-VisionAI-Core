@@ -41,11 +41,13 @@ def parse_args(argv=None):
 
     #set defaults
     #--trained_model=../yolact/weights/yolact_plus_resnet50_54_800000.pth --config=yolact_plus_resnet50_config --score_threshold=0.15 --top_k=15
+    #--trained_model=../yolact/weights/yolact_plus_base_54_800000.pth --config=yolact_plus_base_config --score_threshold=0.15 --top_k=15
 
     parser = argparse.ArgumentParser(
         description='YOLACT COCO Evaluation')
     parser.add_argument('--trained_model',
-                        default='../yolact/weights/yolact_plus_resnet50_54_800000.pth', type=str,
+                        # default='../yolact/weights/yolact_plus_resnet50_54_800000.pth', type=str,
+                        default='../yolact/weights/yolact_plus_base_54_800000.pth', type=str,
                         help='Trained state_dict file path to open. If "interrupt", this will open the interrupt file.')
     parser.add_argument('--top_k', default=15, type=int,
                         help='Further restrict the number of predictions to parse')
@@ -79,7 +81,8 @@ def parse_args(argv=None):
                         help='The output file for coco bbox results if --coco_results is set.')
     parser.add_argument('--mask_det_file', default='results/mask_detections.json', type=str,
                         help='The output file for coco mask results if --coco_results is set.')
-    parser.add_argument('--config', default='yolact_plus_resnet50_config',
+    # parser.add_argument('--config', default='yolact_plus_resnet50_config',
+    parser.add_argument('--config', default='yolact_plus_base_config',
                         help='The config object to use.')
     parser.add_argument('--output_web_json', dest='output_web_json', action='store_true',
                         help='If display is not set, instead of processing IoU values, this dumps detections for usage with the detections viewer web thingy.')

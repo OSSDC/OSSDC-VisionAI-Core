@@ -53,7 +53,8 @@ def debug_print(*argv):
 # To monitor the output from video processing run on your PC this command:
 # ffplay -fflags nobuffer -f mjpeg tcp://0.0.0.0:45654?listen
 ip = 'localhost' #replace with your PC IP where ffplay runs
-ip = None #comment to activate above IP
+# ip = '192.168.1.6'
+# ip = None #comment to activate above IP
 
 clientsocket = None
 if ip is not None:
@@ -123,7 +124,9 @@ class VideoTransformTrack(MediaStreamTrack):
         self.skipFramesCnt = skipFramesCnt #to skip frames at begining of video
         self.imgM = {}
         self.trackPts = {}
-        self.prevGoodFrame = None        
+        self.prevGoodFrame = None     
+        self.saveOrigAndProc = False
+
     async def recv(self):
         global clientsocket, twitchStream, infoColor, video_processing_module
         frame = await self.track.recv()
@@ -188,6 +191,14 @@ class VideoTransformTrack(MediaStreamTrack):
                     imgOut = self.imgM[i]
                 # i=i+1
 
+            timeVal = str(timer)
+            transformAndTime = self.transformLabel+'-'+timeVal
+            if self.saveOrigAndProc:
+                # timeVal = str(frame.time_base)
+                # print(transformAndTime)
+                cv2.imwrite('./saved/orig/img-'+transformAndTime+'.png',img)
+                cv2.imwrite('./saved/proc/img-'+transformAndTime+'.png',imgOut)
+
             # print(imgOut.shape,len(self.transform))
             trackingPoints = self.trackPts[len(self.transform)-1]
             img = imgOut #self.imgM[len(self.transform.keys())-1]
@@ -237,24 +248,26 @@ class VideoTransformTrack(MediaStreamTrack):
     #         x = w//3
     #         y1 = y+25                
 
-            cv2.putText(img, "Alg: "+self.transformLabel, (10,y1-25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "ImagSize: "+str(w)+"x"+str(h), (10,y1+50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "FramCnt: "+str(self.frameCount), (10,y1+75), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "FramProcCnt: "+str(self.frameProcessedCount), (10,y1+100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "TrkPt: "+str(len(trackingPoints)), (10,y1+125), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+            if True:
+                cv2.putText(img, "Alg: "+self.transformLabel, (10,y1-25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "ImagSize: "+str(w)+"x"+str(h), (10,y1+50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "FramCnt: "+str(self.frameCount), (10,y1+75), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "FramProcCnt: "+str(self.frameProcessedCount), (10,y1+100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "TrkPt: "+str(len(trackingPoints)), (10,y1+125), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
 
-            # Calculate Frames per second (FPS)
-            fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+                # Calculate Frames per second (FPS)
+                fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
 
-            cv2.putText(img, "ProcFPS : " + str(int(fps)), (10,y1), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "RealFPS : " + str(int(self.realFPS)), (10,y1+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
-            cv2.putText(img, "Race AI with us at OSSDC.org - Open Source Self Driving Initiative ", (10,h-50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "ProcFPS : " + str(int(fps)), (10,y1), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "RealFPS : " + str(int(self.realFPS)), (10,y1+25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
+                cv2.putText(img, "Race AI with us at OSSDC.org - Open Source Self Driving Initiative ", (10,h-50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, infoColor, 2)
 
     #         img = cv2.resize(img,(cols//3, rows//3))
 
             delta = time.time() - self.prevTime
             if delta > 1:
                 self.realFPS = (self.frameCount-self.prevFrameCount)/delta
+                print(fps,self.realFPS, img.shape, transformAndTime)
                 self.prevFrameCount = self.frameCount
                 self.prevTime = time.time()
                 if infoColor == infoColor1:

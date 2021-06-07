@@ -44,7 +44,7 @@ def init_model(transform):
     torch.backends.cudnn.benchmark = True
 
     print("initialize")
-
+    net_w, net_h = 384, 384
     # select device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: %s" % device)
@@ -154,7 +154,7 @@ def process_image(transform,processing_model,img):
     except Exception as e:
         track = traceback.format_exc()
         print(track)
-        print("OAK-D Exception",e)
+        print("MiDaS 3.0 Exception",e)
         pass
                 
     return tracks,img

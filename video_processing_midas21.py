@@ -108,7 +108,7 @@ def process_image(transform,processing_model,img):
     except Exception as e:
         track = traceback.format_exc()
         print(track)
-        print("OAK-D Exception",e)
+        print("MiDaS 2.1 Exception",e)
         pass
                 
     return tracks,img

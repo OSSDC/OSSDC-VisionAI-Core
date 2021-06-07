@@ -17,7 +17,7 @@ import torch.backends.cudnn as cudnn
 
 pathToProject='../yolo5/'
 sys.path.insert(0, pathToProject)
-# os.chdir(pathToProject)
+os.chdir(pathToProject)
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages,letterbox
@@ -47,10 +47,10 @@ def init_model(transform):
 
     # Load model
     # weights = '../yolo5/yolov5m.pt'
-    # weights = 'yolov5x.pt'
+    weights = 'yolov5x.pt'
     # weights = 'yolov5l.pt'
     # weights = 'yolov5m.pt'
-    weights = 'yolov5s.pt'
+    # weights = 'yolov5s.pt'
     model = attempt_load(weights, map_location=device)  # load FP32 model
 
     imgsz = 640

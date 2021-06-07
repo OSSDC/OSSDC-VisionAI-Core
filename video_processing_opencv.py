@@ -197,7 +197,9 @@ def process_image(transform,processing_model,img):
                     if len(tr) > track_len:
                         del tr[0]
                     new_tracks.append(tr)
-                    cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
+                    # cv2.circle(vis, (int(x), int(y)), 2, (0, 255, 0), -1)
+                    cv2.circle(vis, (int(x), int(y)), 3, (0,0, 255), 2)
+
                 tracks = new_tracks
                 cv2.polylines(vis, [np.int32(tr) for tr in tracks], False, (0, 255, 0))
                 # draw_str(vis, (20, 20), 'track count: %5d FPS = %0.2f' % (len(tracks), fpsValue))

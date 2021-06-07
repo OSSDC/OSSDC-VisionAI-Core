@@ -42,7 +42,7 @@ black = (0, 0, 0)
 
 pathToProject='../yolact/'
 sys.path.insert(0, pathToProject)
-# os.chdir(pathToProject)
+os.chdir(pathToProject)
 
 from eval_colab import *
 from data import config, COCODetection, get_label_map, MEANS, COLORS
