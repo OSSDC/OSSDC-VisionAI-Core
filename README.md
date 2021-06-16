@@ -65,6 +65,15 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
 
+- GANsNRoses demo
+    - Install GANsNRoses https://github.com/mchong6/GANsNRoses - see install steps in video_processing_GANsNRoses.py or OSSDC_VisionAI_demo_reel.ipynb notebook
+    - run the GANsNRoses video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t GANsNRoses --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable GANsNRoses line)    
+    - Demo videos
+        Have fun with GANsNRoses - using OSSDC VisionAI realtime video processing platform
+        https://www.youtube.com/watch?v=YZTzjk_qh4w
+        
 - DepthAI (OAK-D) stereo smart camera Side-By-Side 3D streaming demo
     - Install latest DepthAI API from https://github.com/luxonis/depthai-python
     - run the DepthAI video processor on the stereo or RGB video stream from OAK-D camera and stream it to VisionAI Android app
