@@ -26,7 +26,8 @@ from aiortc import (
     MediaStreamTrack,
 )
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
-from signaling_race import BYE, RaceOssdcSignaling, object_from_string, object_to_string, sendSubscribeMessage,sendUnSubscribeMessage, roomName, sendMessage,droneRoomName,sio
+# from signaling_race import BYE, RaceOssdcSignaling, object_from_string, object_to_string, sendSubscribeMessage,sendUnSubscribeMessage, roomName, sendMessage,droneRoomName,sio
+from signaling_apprtc import BYE, ApprtcSignaling
 
 import sys
 import argparse
@@ -53,7 +54,6 @@ def debug_print(*argv):
 # To monitor the output from video processing run on your PC this command:
 # ffplay -fflags nobuffer -f mjpeg tcp://0.0.0.0:45654?listen
 ip = 'localhost' #replace with your PC IP where ffplay runs
-# ip = '192.168.1.6'
 # ip = None #comment to activate above IP
 
 clientsocket = None
@@ -91,7 +91,7 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, track, transform, signaling, model, skipFrames=True, skipFramesCnt=0):
+    def __init__(self, track, transform, signaling, model, skipFrames=False, skipFramesCnt=0):
         super().__init__()  # don't forget this!
         # self.transform = transform
         self.transformLabel = None
@@ -111,8 +111,8 @@ class VideoTransformTrack(MediaStreamTrack):
 
         self.track = track
         self.scale = 1
-        #self.skipFrames = True
         self.skipFrames = skipFrames #False #use it for Youtube streaming
+        # self.skipFrames = False
         self.prevTime = time.time()
         self.starttime1 = time.time()
         self.colors = "Not computed"
@@ -322,95 +322,65 @@ class VideoTransformTrack(MediaStreamTrack):
 
         return new_frame
 
-
 async def run(pc, player, recorder, signaling, transform, model, skipFrames, skipFramesCnt):
     def add_tracks():
-      debug_print("player",player)
-      if player and player.video:
-          local_video = player.video
-          local_video = VideoTransformTrack(player.video, transform=transform, signaling=signaling, model=model, skipFrames=skipFrames, skipFramesCnt=skipFramesCnt)
-          pc.addTrack(local_video)
-      else:
-          pc.addTransceiver('video','sendrecv') #this is the trick to echo webcam back
+        if player and player.audio:
+            pc.addTrack(player.audio)
+
+        if player and player.video:
+            # pc.addTrack(player.video)
+            local_video = VideoTransformTrack(player.video, transform=transform, signaling=signaling, model=model, skipFrames=skipFrames, skipFramesCnt=skipFramesCnt)
+            pc.addTrack(local_video)
+        else:
+            # localTrack =  VideoTransformTrack(None)
+            # pc.addTrack(localTrack)
+            pc.addTransceiver('video','sendrecv') #this is the trick to echo webcam back
+
+            # pc.addTransceiver('video','sendrecv') #this is the trick to echo webcam back
 
     @pc.on("track")
     def on_track(track):
-      debug_print("Track %s received" % track.kind)
-      if track.kind == "video":
-        if not(player and player.video):
-            local_video = VideoTransformTrack(
-                track, transform=transform, signaling=signaling, model=model, skipFrames=skipFrames, skipFramesCnt=skipFramesCnt
-            )
-            pc.addTrack(local_video)
+        print("Track %s received" % track.kind)
+        if track.kind == "video":
+            if not(player and player.video):
+                local_video = VideoTransformTrack(
+                    track, transform=transform, signaling=signaling, model=model
+                )
+                pc.addTrack(local_video)
 
-        @track.on("ended")
-        async def on_ended():
-          debug_print("track ended")
-          signaling.trackEnded=True
+            # @track.on("ended")
+            # async def on_ended():
+            # debug_print("track ended")
+            # signaling.trackEnded=True
+        recorder.addTrack(track)
 
-
+    # connect to websocket and join
     params = await signaling.connect()
 
-    trackEnded = False
+    if params["is_initiator"] == "true":
+        # send offer
+        add_tracks()
+        await pc.setLocalDescription(await pc.createOffer())
+        await signaling.send(pc.localDescription)
 
-    await sendSubscribeMessage()
-
-    debug_print("run")
     # consume signaling
-    noneCnt = 0
     while True:
         obj = await signaling.receive()
-#         debug_print("obj:", obj)
-        if obj is None:
-            if(noneCnt>5):
-                break
-            noneCnt=noneCnt+1
-            continue
-        try:
-          if hasattr(obj, 'type'):
-              if obj.type == "answer":
-                  if pc.signalingState == "stable":
-                      pass
-                  else:
-                      # add_tracks()
-                      await pc.setRemoteDescription(obj)
-                      print("Start recorder anwser")
-                      await recorder.start()
-                      await signaling.send(pc.localDescription)
-              if obj.type == "offer":
-                  if pc.signalingState == "have-local-offer" or pc.signalingState == "stable":
-                      pass
-                  else:
-                      # add_tracks()
-                      await pc.setRemoteDescription(obj)
-                      print("Start recorder offer")
-                      await recorder.start()
-                      await signaling.send(pc.localDescription)
 
-          if(isinstance(obj,list) and len(obj)==2):
-              add_tracks()
-              await pc.setLocalDescription(await pc.createOffer())
-              await signaling.send(pc.localDescription)
-          elif isinstance(obj, RTCSessionDescription):
-              debug_print("pc.signalingState",pc.signalingState)
+        if isinstance(obj, RTCSessionDescription):
+            await pc.setRemoteDescription(obj)
+            await recorder.start()
 
-          elif isinstance(obj, RTCIceCandidate):
-                await pc.addIceCandidate(obj)
-
-          elif obj is BYE or signaling.trackEnded:
-                debug_print("Exiting")
-                break
-          else:
-              debug_print("obj not handled:",obj)
-        except Exception as e:
-            track = traceback.format_exc()
-            print(track)
-            print("WebRTC",e)
-
-            noneCnt=noneCnt+1
-            #debug_print("error in run loop",e)
-            if(noneCnt>5):
-                break
+            if obj.type == "offer":
+                # send answer
+                add_tracks()
+                await pc.setLocalDescription(await pc.createAnswer())
+                await signaling.send(pc.localDescription)
+        elif isinstance(obj, RTCIceCandidate):
+            await pc.addIceCandidate(obj)
+        elif obj is BYE:
+            print("Exiting")
+            break
 
 
 if __name__ == "__main__":
@@ -424,9 +394,13 @@ if __name__ == "__main__":
     parser.add_argument('--videoUrl', type=str, default=None,  nargs='?', const=None)
     parser.add_argument('--skipFramesCnt', type=str, default=0, nargs='?', const=0)
     parser.add_argument('--twitchStreamKey', type=str, default=None,  nargs='?', const=None )
+    parser.add_argument('-r','--room', type=str)
 
+       
     args, unknown = parser.parse_known_args()
 
+    if args.room:
+        roomName = args.room
 
     transform = None
     if args.transform:
@@ -498,7 +472,10 @@ if __name__ == "__main__":
 
     print('videoUrl=',videoUrl)
 
-    signaling = RaceOssdcSignaling(args.room)
+    # create signaling and peer connection
+    # signaling = RaceOssdcSignaling(args.room)
+    signaling = ApprtcSignaling(args.room)
+
     
     configuration = RTCConfiguration()
     
@@ -538,8 +515,6 @@ if __name__ == "__main__":
             skipFrames = True
         else:
             skipFrames = False
-
-    print('skipFrames=',skipFrames)
 
     loop = asyncio.get_event_loop()
 

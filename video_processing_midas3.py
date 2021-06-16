@@ -9,6 +9,9 @@ import os
 # Mono depth using MiDaS project - new 3.0 models and 2.1 models
 # https://github.com/intel-isl/MiDaS
 
+# Install steps:
+# cd MiDaS; wget https://github.com/intel-isl/DPT/releases/download/1_0/dpt_large-midas-2f21e586.pt
+
 # Status: working
 
 sys.path.insert(0, '../MiDaS/')

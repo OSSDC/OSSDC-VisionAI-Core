@@ -59,8 +59,8 @@ def init_model(transform):
                               blockSize = 3 ) #7 )
         track_len = 25
         detect_interval = 15
-        tracks = []                              
-        return (lk_params,feature_params,track_len,detect_interval,tracks), None
+        tracks1 = []                              
+        return (lk_params,feature_params,track_len,detect_interval,tracks1), None
 
     return None, None
 
@@ -176,48 +176,53 @@ def process_image(transform,processing_model,img):
             img = cv2.warpAffine(img, M, (cols, rows))
 
         elif transform == 'lkt':
-            (lk_params,feature_params,track_len,detect_interval,tracks) = processing_model
+            (lk_params,feature_params,track_len,detect_interval,tracks1) = processing_model
             # frame = img
             frame_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             vis = img
 
-            if len(tracks) > 0:
+            if len(tracks1) > 0:
                 # try:
-                img0, img1 = previous_grey, frame_gray
-                p0 = np.float32([tr[-1] for tr in tracks]).reshape(-1, 1, 2)
-                p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
-                p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
-                d = abs(p0-p0r).reshape(-1, 2).max(-1)
-                good = d < 1
-                new_tracks = []
-                for tr, (x, y), good_flag in zip(tracks, p1.reshape(-1, 2), good):
-                    if not good_flag:
-                        continue
-                    tr.append((x, y))
-                    if len(tr) > track_len:
-                        del tr[0]
-                    new_tracks.append(tr)
-                    # cv2.circle(vis, (int(x), int(y)), 2, (0, 255, 0), -1)
-                    cv2.circle(vis, (int(x), int(y)), 3, (0,0, 255), 2)
+                try:
+                  img0, img1 = previous_grey, frame_gray
+                  p0 = np.float32([tr[-1] for tr in tracks1]).reshape(-1, 1, 2)
+                  p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
+                  p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
+                  d = abs(p0-p0r).reshape(-1, 2).max(-1)
+                  good = d < 1
+                  new_tracks = []
+                  for tr, (x, y), good_flag in zip(tracks1, p1.reshape(-1, 2), good):
+                      if not good_flag:
+                          continue
+                      tr.append((x, y))
+                      if len(tr) > track_len:
+                          del tr[0]
+                      new_tracks.append(tr)
+                      # cv2.circle(vis, (int(x), int(y)), 2, (0, 255, 0), -1)
+                      cv2.circle(vis, (int(x), int(y)), 3, (0,0, 255), 2)
 
-                tracks = new_tracks
-                cv2.polylines(vis, [np.int32(tr) for tr in tracks], False, (0, 255, 0))
-                # draw_str(vis, (20, 20), 'track count: %5d FPS = %0.2f' % (len(tracks), fpsValue))
-                # except:
-                #     # tracks = []
-                #     pass
+                  tracks1 = new_tracks
+                  cv2.polylines(vis, [np.int32(tr) for tr in tracks1], False, (0, 255, 0))
+                  # draw_str(vis, (20, 20), 'track count: %5d FPS = %0.2f' % (len(tracks1), fpsValue))
+                  # except:
+                  #     # tracks1 = []
+                  #     pass
+                except:
+                  tracks1 = []
 
             if frameCnt % detect_interval == 0:
                 mask = np.zeros_like(frame_gray)
                 mask[:] = 255
-                for x, y in [np.int32(tr[-1]) for tr in tracks]:
+                for x, y in [np.int32(tr[-1]) for tr in tracks1]:
                     cv2.circle(mask, (x, y), 5, 0, -1)
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
                 if p is not None:
                     for x, y in np.float32(p).reshape(-1, 2):
-                        tracks.append([(x, y)])
+                        tracks1.append([(x, y)])
             previous_grey = frame_gray
+
             img = vis
+            tracks = tracks1
         if transform == 'sbs':
             # black = np.zeros((900,1600), dtype = "uint8")
             # h,w = black.shape

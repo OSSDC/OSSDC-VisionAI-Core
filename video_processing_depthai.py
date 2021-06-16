@@ -1,11 +1,11 @@
 import traceback
-import queue
+# import queue
 from pathlib import Path
 import cv2
 
-import sys
-import argparse
-import os
+# import sys
+# import argparse
+# import os
 
 import numpy as np
 import depthai as dai
@@ -36,25 +36,28 @@ if lrcheck or extended or subpixel:
     median   = dai.StereoDepthProperties.MedianFilter.MEDIAN_OFF # TODO
 
 
-from pynput.keyboard import Key, Listener
-  
+try:
+    from pynput.keyboard import Key, Listener
+    def on_press(k):
+        global diff,t
+        if str(k)[1] == '=':
+            if diff <= -10:
+                diff=diff+10
+        elif str(k)[1] == '-':
+            diff=diff-10
+        elif str(k)[1] == 'q':
+            t.stop()
+        print('key', k, 'diff', diff)
+        
+    
+    listener = Listener(
+        on_press=on_press)
+    listener.start()
+except:
+    pass
+
 diff = 0
 
-def on_press(k):
-    global diff,t
-    if str(k)[1] == '=':
-         if diff <= -10:
-              diff=diff+10
-    elif str(k)[1] == '-':
-         diff=diff-10
-    elif str(k)[1] == 'q':
-         t.stop()
-    print('key', k, 'diff', diff)
-    
-  
-listener = Listener(
-    on_press=on_press)
-listener.start()
 
 
 """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
