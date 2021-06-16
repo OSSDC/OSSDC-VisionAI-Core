@@ -69,6 +69,9 @@ declare -a algos=('mediapipe.holistic' 'mediapipe.facemesh' 'mediapipe.hands' 'm
 
 #declare -a algos=('midas3')
 
+#declare -a algos=('GANsNRoses')
+
+
 pkill -9 -f race
 sleep 1
 pkill -9 -f race
