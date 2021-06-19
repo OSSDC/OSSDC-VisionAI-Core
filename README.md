@@ -64,6 +64,14 @@ Datasets and pretrained models are available in https://github.com/OSSDC/OSSDC-V
     - Run VisionAI Android app and setup the room name and password and start the WebRTC conference
     - Update room info in signaling_race.py (everytime the room name or password is modified in the VisionAI Android app)
 
+- SegFormer semantic segmentation with transformers demo
+    - Install SegFormer https://github.com/NVlabs/SegFormer - see install steps in video_processing_SegFormer.py or OSSDC_VisionAI_demo_reel.ipynb notebook
+    - run the SegFormer video processor on the video stream from VisionAI Android app
+        - python race-ossdc-org_webrtc_processing.py -t SegFormer.b3-512-ade --room {your_room_name}
+        - demo-reel.sh {your_room_name} (enable SegFormer line)    
+    - Demo videos
+        SegFormer - semantic segmentation with transformers using OSSDC VisionAI platform
+        hhttps://www.youtube.com/watch?v=3ws-irF4dEQ
 
 - GANsNRoses demo
     - Install GANsNRoses https://github.com/mchong6/GANsNRoses - see install steps in video_processing_GANsNRoses.py or OSSDC_VisionAI_demo_reel.ipynb notebook
